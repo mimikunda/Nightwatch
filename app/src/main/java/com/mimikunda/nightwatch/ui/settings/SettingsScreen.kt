@@ -1,5 +1,6 @@
 package com.mimikunda.nightwatch.ui.settings
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -79,6 +80,11 @@ fun SettingsScreen(
     var isCreateRoleDialogOpen by remember { mutableStateOf(false) }
     var isResetGameDialogOpen by remember { mutableStateOf(false) }
     var isResetSettingsDialogOpen by remember { mutableStateOf(false) }
+
+    // Predictive Back / System Back Handler for Submenus
+    BackHandler(enabled = currentSubmenu != SettingsSubmenu.Main) {
+        currentSubmenu = SettingsSubmenu.Main
+    }
 
     AnimatedContent(
         targetState = currentSubmenu,

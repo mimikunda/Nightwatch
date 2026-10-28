@@ -1,5 +1,6 @@
 package com.mimikunda.nightwatch.ui.navigation
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -48,6 +49,11 @@ enum class NavigationDestination(
 @Composable
 fun MainAppContainer() {
     var currentDestination by remember { mutableStateOf(NavigationDestination.Notebook) }
+
+    // Predictive Back / System Back Handler for Main Navigation
+    BackHandler(enabled = currentDestination != NavigationDestination.Notebook) {
+        currentDestination = NavigationDestination.Notebook
+    }
 
     Scaffold(
         containerColor = PitchBlack,
