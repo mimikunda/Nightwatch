@@ -81,21 +81,23 @@ fun ModeratorActionDock(
             // Unselected Table Actions
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = if (isLayoutEditUnlocked) Arrangement.SpaceBetween else Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Button(
-                    onClick = onOpenDealFlow,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary
-                    )
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Style,
-                        contentDescription = null,
-                        modifier = Modifier.padding(end = 6.dp)
-                    )
-                    Text(stringResource(R.string.deal_roles_button), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                if (isLayoutEditUnlocked) {
+                    Button(
+                        onClick = onOpenDealFlow,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary
+                        )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Style,
+                            contentDescription = null,
+                            modifier = Modifier.padding(end = 6.dp)
+                        )
+                        Text(stringResource(R.string.deal_roles_button), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
                 }
 
                 Button(

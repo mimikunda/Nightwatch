@@ -73,6 +73,17 @@
     <string name="deal_complete_subtitle">All players have received their secret roles. Hand the phone back to the Moderator to begin Night 1.</string>
     <string name="enter_notebook_button">Enter Moderator Notebook</string>
 
+    <!-- Danger Zone & Reset -->
+    <string name="danger_zone_title">Danger Zone</string>
+    <string name="danger_zone_subtitle">Irreversible game and settings reset actions</string>
+    <string name="btn_clear_night_markers">Clear Night Markers</string>
+    <string name="btn_reset_game">Reset Game &amp; Seating</string>
+    <string name="btn_reset_settings">Reset Settings to Defaults</string>
+    <string name="dialog_reset_game_title">Reset Current Game?</string>
+    <string name="dialog_reset_game_msg">This will clear all player names, assigned roles, vitality status, and custom chair positions.</string>
+    <string name="dialog_reset_settings_title">Reset All Settings?</string>
+    <string name="dialog_reset_settings_msg">This will restore standard roles and status effects, deleting all custom created roles.</string>
+
     <!-- Dialogs -->
     <string name="dialog_select_role_title">Select Role</string>
     <string name="dialog_role_unassigned">Unassigned</string>
@@ -80,4 +91,5 @@
     <string name="dialog_player_name_label">Player Name</string>
     <string name="btn_save">Save</string>
     <string name="btn_cancel">Cancel</string>
+    <string name="btn_confirm">Confirm</string>
 </resources>

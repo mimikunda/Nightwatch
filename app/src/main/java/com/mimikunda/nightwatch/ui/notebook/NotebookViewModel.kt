@@ -1,10 +1,12 @@
 package com.mimikunda.nightwatch.ui.notebook
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import com.mimikunda.nightwatch.domain.model.PerimeterSeatingTable
 import com.mimikunda.nightwatch.domain.model.RoleDeckConfig
 import com.mimikunda.nightwatch.domain.model.StatusMarker
 import com.mimikunda.nightwatch.domain.model.TableEdge
+import com.mimikunda.nightwatch.domain.persistence.NightwatchPersistence
 import com.mimikunda.nightwatch.domain.state.NotebookState
 import com.mimikunda.nightwatch.ui.deal.DealFlowState
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -41,6 +43,64 @@ class NotebookViewModel : ViewModel() {
 
     private val _uiState = MutableStateFlow(NotebookUiState())
     val uiState: StateFlow<NotebookUiState> = _uiState.asStateFlow()
+    private var appContext: Context? = null
+
+    fun initialize(context: Context) {
+        appContext = context.applicationContext
+        val loaded = NightwatchPersistence.loadNotebookState(context.applicationContext)
+        if (loaded != null) {
+            val topC = loaded.seats.count { it.position.edge == TableEdge.TOP }
+            val rightC = loaded.seats.count { it.position.edge == TableEdge.RIGHT }
+            val bottomC = loaded.seats.count { it.position.edge == TableEdge.BOTTOM }
+            val leftC = loaded.seats.count { it.position.edge == TableEdge.LEFT }
+            val floatC = loaded.seats.count { it.position.edge == TableEdge.FLOATING }
+
+            _uiState.update { current ->
+                current.copy(
+                    notebookState = loaded,
+                    edgeCounts = mapOf(
+                        TableEdge.TOP to topC,
+                        TableEdge.RIGHT to rightC,
+                        TableEdge.BOTTOM to bottomC,
+                        TableEdge.LEFT to leftC,
+                        TableEdge.FLOATING to floatC
+                    )
+                )
+            }
+        }
+    }
+
+    private fun persist(notebookState: NotebookState) {
+        appContext?.let { ctx ->
+            NightwatchPersistence.saveNotebookState(ctx, notebookState)
+        }
+    }
+
+    fun resetGame() {
+        val defaultTable = PerimeterSeatingTable.build(
+            topCount = 2,
+            rightCount = 1,
+            bottomCount = 2,
+            leftCount = 1,
+            floatingCount = 0
+        )
+        val defaultState = NotebookState(seats = defaultTable.seats)
+        _uiState.update { current ->
+            current.copy(
+                notebookState = defaultState,
+                selectedSeatId = null,
+                isLinkSelectionMode = false,
+                edgeCounts = mapOf(
+                    TableEdge.TOP to 2,
+                    TableEdge.RIGHT to 1,
+                    TableEdge.BOTTOM to 2,
+                    TableEdge.LEFT to 1,
+                    TableEdge.FLOATING to 0
+                )
+            )
+        }
+        persist(defaultState)
+    }
 
     fun onSeatClick(seatId: String) {
         _uiState.update { currentState ->
@@ -48,6 +108,7 @@ class NotebookViewModel : ViewModel() {
                 val sourceId = currentState.selectedSeatId
                 if (sourceId != seatId) {
                     val updatedState = currentState.notebookState.linkSeats(sourceId, seatId)
+                    persist(updatedState)
                     currentState.copy(
                         notebookState = updatedState,
                         isLinkSelectionMode = false
@@ -68,6 +129,7 @@ class NotebookViewModel : ViewModel() {
             val seat = currentState.notebookState.seats.find { it.id == seatId }
             if (seat != null) {
                 val updatedState = currentState.notebookState.setLifeStatus(seatId, !seat.isAlive)
+                persist(updatedState)
                 currentState.copy(notebookState = updatedState)
             } else {
                 currentState
@@ -79,6 +141,7 @@ class NotebookViewModel : ViewModel() {
         _uiState.update { currentState ->
             val selectedId = currentState.selectedSeatId ?: return@update currentState
             val updatedState = currentState.notebookState.toggleStatus(selectedId, marker)
+            persist(updatedState)
             currentState.copy(notebookState = updatedState)
         }
     }
@@ -92,6 +155,7 @@ class NotebookViewModel : ViewModel() {
             } else {
                 currentState.notebookState.toggleCustomStatus(selectedId, effectId)
             }
+            persist(updatedState)
             currentState.copy(notebookState = updatedState)
         }
     }
@@ -101,6 +165,7 @@ class NotebookViewModel : ViewModel() {
             val selectedId = currentState.selectedSeatId ?: return@update currentState
             val seat = currentState.notebookState.seats.find { it.id == selectedId } ?: return@update currentState
             val updatedState = currentState.notebookState.setLifeStatus(selectedId, !seat.isAlive)
+            persist(updatedState)
             currentState.copy(notebookState = updatedState)
         }
     }
@@ -109,6 +174,7 @@ class NotebookViewModel : ViewModel() {
         _uiState.update { currentState ->
             val selectedId = currentState.selectedSeatId ?: return@update currentState
             val updatedState = currentState.notebookState.updateSeatName(selectedId, name)
+            persist(updatedState)
             currentState.copy(notebookState = updatedState, isNamePickerOpen = false)
         }
     }
@@ -117,6 +183,7 @@ class NotebookViewModel : ViewModel() {
         _uiState.update { currentState ->
             val selectedId = currentState.selectedSeatId ?: return@update currentState
             val updatedState = currentState.notebookState.updateSeatRole(selectedId, roleId)
+            persist(updatedState)
             currentState.copy(notebookState = updatedState, isRolePickerOpen = false)
         }
     }
@@ -124,6 +191,7 @@ class NotebookViewModel : ViewModel() {
     fun onSeatDrag(seatId: String, normX: Float, normY: Float) {
         _uiState.update { currentState ->
             val updatedState = currentState.notebookState.updateSeatCustomPosition(seatId, normX, normY)
+            persist(updatedState)
             currentState.copy(notebookState = updatedState)
         }
     }
@@ -147,6 +215,7 @@ class NotebookViewModel : ViewModel() {
     fun onClearNightMarkers() {
         _uiState.update { currentState ->
             val updatedState = currentState.notebookState.clearNightMarkers()
+            persist(updatedState)
             currentState.copy(notebookState = updatedState)
         }
     }
@@ -162,6 +231,7 @@ class NotebookViewModel : ViewModel() {
                 leftCount = newEdgeCounts[TableEdge.LEFT] ?: 0,
                 floatingCount = newEdgeCounts[TableEdge.FLOATING] ?: 0
             )
+            persist(updatedState)
             currentState.copy(
                 edgeCounts = newEdgeCounts,
                 notebookState = updatedState
@@ -214,6 +284,7 @@ class NotebookViewModel : ViewModel() {
             val totalSeats = currentState.notebookState.seats.size
             val shuffled = deckConfig.buildShuffledDeck(totalSeats)
             val dealtState = currentState.notebookState.dealRoles(shuffled)
+            persist(dealtState)
             currentState.copy(
                 notebookState = dealtState,
                 dealFlowState = DealFlowState.Inactive
@@ -239,6 +310,7 @@ class NotebookViewModel : ViewModel() {
                 val seat = currentState.notebookState.seats.getOrNull(flow.currentSeatIndex)
                 if (seat != null) {
                     val updatedNotebook = currentState.notebookState.updateSeatName(seat.id, newName.ifBlank { null })
+                    persist(updatedNotebook)
                     currentState.copy(
                         notebookState = updatedNotebook,
                         dealFlowState = flow.copy(draftedName = newName)
@@ -267,6 +339,7 @@ class NotebookViewModel : ViewModel() {
                 } else {
                     // All seats processed -> Apply dealt roles to notebookState
                     val dealtState = currentState.notebookState.dealRoles(flow.shuffledRoleIds)
+                    persist(dealtState)
                     currentState.copy(
                         notebookState = dealtState,
                         dealFlowState = DealFlowState.ReadyForModerator
