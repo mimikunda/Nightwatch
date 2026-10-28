@@ -1,3 +1,83 @@
 <resources>
     <string name="app_name">Nightwatch</string>
+
+    <!-- Navigation -->
+    <string name="nav_notebook">Notebook</string>
+    <string name="nav_director">Director</string>
+    <string name="nav_settings">Settings</string>
+
+    <!-- Headers & Placeholders -->
+    <string name="notebook_title">Notebook Scratchpad</string>
+    <string name="notebook_subtitle">Manual status overrides &amp; spatial seating</string>
+    <string name="director_placeholder_title">Director Mode</string>
+    <string name="director_placeholder_subtitle">Assisted turn-by-turn state machine (Phase 4)</string>
+    <string name="settings_placeholder_title">Settings</string>
+    <string name="settings_placeholder_subtitle">Moderator rules and preferences</string>
+
+    <!-- Table Canvas HUD -->
+    <string name="hud_alive">Alive: %1$d / %2$d</string>
+    <string name="hud_werewolves">Wolves: %1$d</string>
+    <string name="layout_edit_on">Layout Edit: ON</string>
+    <string name="layout_edit_locked">Layout Locked</string>
+
+    <!-- Seat & Status Markers -->
+    <string name="status_wolf_target">Wolf Target</string>
+    <string name="status_protected">Protected</string>
+    <string name="status_saved_potion">Saved Potion</string>
+    <string name="status_poisoned">Poisoned</string>
+    <string name="status_seer_inspected">Seer Inspected</string>
+    <string name="status_mayor">Mayor</string>
+    <string name="status_silenced">Silenced</string>
+
+    <string name="seat_default_name">Seat %1$d</string>
+    <string name="seat_status_alive">ALIVE</string>
+    <string name="seat_status_dead">DEAD</string>
+
+    <string name="seat_action_kill">Kill</string>
+    <string name="seat_action_revive">Revive</string>
+    <string name="seat_action_assign_role">Role</string>
+    <string name="seat_action_edit_name">Rename</string>
+    <string name="seat_action_link">Link</string>
+    <string name="status_flags_label">Status Flags</string>
+    <string name="link_prompt">Tap a seat to link with %1$s</string>
+
+    <!-- Moderator Dock & Setup -->
+    <string name="deal_roles_button">Deal Roles</string>
+    <string name="clear_markers_button">Clear Markers</string>
+    <string name="table_setup_title">Table Layout</string>
+    <string name="edge_top">Top</string>
+    <string name="edge_right">Right</string>
+    <string name="edge_bottom">Bottom</string>
+    <string name="edge_left">Left</string>
+    <string name="edge_float">Float</string>
+
+    <!-- Role Deck Builder & Cardless Deal Flow -->
+    <string name="deck_builder_title">Role Deck Builder</string>
+    <string name="deck_builder_subtitle">Total Seats: %1$d (%2$d Villagers auto-added)</string>
+    <string name="role_werewolves">Werewolves</string>
+    <string name="role_seer">Seer</string>
+    <string name="role_bodyguard">Bodyguard</string>
+    <string name="role_witch">Witch</string>
+    <string name="role_mayor">Mayor</string>
+    <string name="pass_phone_button">Pass Phone (Cardless Deal)</string>
+    <string name="quick_shuffle_button">Quick Shuffle (Moderator Only)</string>
+    <string name="pass_phone_header">Pass Phone to Chair #%1$d</string>
+    <string name="name_input_label">Your Name (Optional)</string>
+    <string name="hold_to_reveal_title">PRESS &amp; HOLD GLASS</string>
+    <string name="hold_to_reveal_subtitle">Keep held to see your secret role</string>
+    <string name="pass_prompt_releasing">Release glass before passing&#8230;</string>
+    <string name="pass_prompt_hold_first">Hold glass to peek role first</string>
+    <string name="pass_prompt_finish">Finish Deal &amp; Hand to Moderator</string>
+    <string name="pass_prompt_lock_and_pass">Lock &amp; Pass to Next Seat</string>
+    <string name="deal_complete_title">Roles Dealt &amp; Phone Returned</string>
+    <string name="deal_complete_subtitle">All players have received their secret roles. Hand the phone back to the Moderator to begin Night 1.</string>
+    <string name="enter_notebook_button">Enter Moderator Notebook</string>
+
+    <!-- Dialogs -->
+    <string name="dialog_select_role_title">Select Role</string>
+    <string name="dialog_role_unassigned">Unassigned</string>
+    <string name="dialog_edit_name_title">Edit Player Name</string>
+    <string name="dialog_player_name_label">Player Name</string>
+    <string name="btn_save">Save</string>
+    <string name="btn_cancel">Cancel</string>
 </resources>

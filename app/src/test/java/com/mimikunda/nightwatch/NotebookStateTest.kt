@@ -71,4 +71,45 @@ class NotebookStateTest {
         assertEquals("Alice", seat.name)
         assertEquals("seer", seat.roleId)
     }
+
+    @Test
+    fun `updateSeatCustomPosition sets custom coordinates`() {
+        val table = PerimeterSeatingTable.build(topCount = 2)
+        var state = NotebookState(seats = table.seats)
+        val targetSeatId = table.seats[0].id
+
+        state = state.updateSeatCustomPosition(targetSeatId, 0.45f, 0.85f)
+
+        val seat = state.seats.first { it.id == targetSeatId }
+        assertEquals(0.45f, seat.position.customNormalizedX!!, 0.001f)
+        assertEquals(0.85f, seat.position.customNormalizedY!!, 0.001f)
+    }
+
+    @Test
+    fun `clearNightMarkers removes transient night statuses but retains MAYOR`() {
+        val table = PerimeterSeatingTable.build(topCount = 2)
+        var state = NotebookState(seats = table.seats)
+        val targetSeatId = table.seats[0].id
+
+        state = state.toggleStatus(targetSeatId, StatusMarker.WOLF_TARGET)
+        state = state.toggleStatus(targetSeatId, StatusMarker.MAYOR)
+
+        state = state.clearNightMarkers()
+
+        val seat = state.seats.first { it.id == targetSeatId }
+        assertFalse(seat.activeStatuses.contains(StatusMarker.WOLF_TARGET))
+        assertTrue(seat.activeStatuses.contains(StatusMarker.MAYOR))
+    }
+
+    @Test
+    fun `updateEdgeCounts resizes seating layout while preserving existing seat data`() {
+        val table = PerimeterSeatingTable.build(topCount = 2)
+        var state = NotebookState(seats = table.seats)
+        state = state.updateSeatName(table.seats[0].id, "Bob")
+
+        state = state.updateEdgeCounts(topCount = 3, rightCount = 1, bottomCount = 2, leftCount = 1, floatingCount = 0)
+
+        assertEquals(7, state.seats.size)
+        assertEquals("Bob", state.seats[0].name)
+    }
 }
