@@ -83,6 +83,19 @@ class NotebookViewModel : ViewModel() {
         }
     }
 
+    fun onToggleCustomStatus(effectId: String) {
+        _uiState.update { currentState ->
+            val selectedId = currentState.selectedSeatId ?: return@update currentState
+            val standardMarker = StatusMarker.entries.find { it.name == effectId }
+            val updatedState = if (standardMarker != null) {
+                currentState.notebookState.toggleStatus(selectedId, standardMarker)
+            } else {
+                currentState.notebookState.toggleCustomStatus(selectedId, effectId)
+            }
+            currentState.copy(notebookState = updatedState)
+        }
+    }
+
     fun onToggleAliveSelected() {
         _uiState.update { currentState ->
             val selectedId = currentState.selectedSeatId ?: return@update currentState

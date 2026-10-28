@@ -8,6 +8,7 @@ data class Seat(
     val position: SeatPosition,
     val isAlive: Boolean = true,
     val activeStatuses: Set<StatusMarker> = emptySet(),
+    val customStatusIds: Set<String> = emptySet(),
     val linkedSeatIds: Set<String> = emptySet()
 )
 

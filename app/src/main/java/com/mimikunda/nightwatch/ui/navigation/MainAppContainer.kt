@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoMode
 import androidx.compose.material.icons.filled.EditNote
@@ -34,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mimikunda.nightwatch.R
 import com.mimikunda.nightwatch.ui.notebook.NotebookScreen
+import com.mimikunda.nightwatch.ui.settings.SettingsScreen
 import com.mimikunda.nightwatch.ui.theme.PitchBlack
 
 enum class NavigationDestination(
@@ -95,10 +95,7 @@ fun MainAppContainer() {
                     )
                 }
                 NavigationDestination.Settings -> {
-                    PlaceholderScreen(
-                        title = stringResource(R.string.settings_placeholder_title),
-                        subtitle = stringResource(R.string.settings_placeholder_subtitle)
-                    )
+                    SettingsScreen()
                 }
             }
         }

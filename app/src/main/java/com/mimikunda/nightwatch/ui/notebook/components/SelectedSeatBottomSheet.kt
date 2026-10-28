@@ -27,6 +27,8 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -37,13 +39,14 @@ import androidx.compose.ui.unit.sp
 import com.mimikunda.nightwatch.R
 import com.mimikunda.nightwatch.domain.model.Seat
 import com.mimikunda.nightwatch.domain.model.StatusMarker
-import com.mimikunda.nightwatch.ui.theme.toColor
+import com.mimikunda.nightwatch.domain.settings.GameSettingsRepository
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SelectedSeatBottomSheet(
     selectedSeat: Seat,
     onToggleStatus: (StatusMarker) -> Unit,
+    onToggleCustomStatus: (String) -> Unit,
     onToggleAlive: () -> Unit,
     onOpenRolePicker: () -> Unit,
     onOpenNamePicker: () -> Unit,
@@ -51,6 +54,8 @@ fun SelectedSeatBottomSheet(
     onDismiss: () -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val settings by GameSettingsRepository.settings.collectAsState()
+    val enabledEffects = settings.enabledEffects
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -103,38 +108,48 @@ fun SelectedSeatBottomSheet(
             Spacer(modifier = Modifier.height(16.dp))
 
             // Scrollable Status Marker FilterChips
-            Text(
-                text = stringResource(R.string.status_flags_label),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(modifier = Modifier.height(6.dp))
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                StatusMarker.entries.forEach { marker ->
-                    val isActive = selectedSeat.activeStatuses.contains(marker)
-                    FilterChip(
-                        selected = isActive,
-                        onClick = { onToggleStatus(marker) },
-                        label = {
-                            Text(
-                                text = marker.name.replace("_", " "),
-                                fontSize = 11.sp
+            if (enabledEffects.isNotEmpty()) {
+                Text(
+                    text = stringResource(R.string.status_flags_label),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    enabledEffects.forEach { effect ->
+                        val isActive = selectedSeat.activeStatuses.any { it.name == effect.id } ||
+                                selectedSeat.customStatusIds.contains(effect.id)
+                        FilterChip(
+                            selected = isActive,
+                            onClick = {
+                                val standardMarker = StatusMarker.entries.find { it.name == effect.id }
+                                if (standardMarker != null) {
+                                    onToggleStatus(standardMarker)
+                                } else {
+                                    onToggleCustomStatus(effect.id)
+                                }
+                            },
+                            label = {
+                                Text(
+                                    text = effect.name,
+                                    fontSize = 11.sp
+                                )
+                            },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = Color(effect.colorArgb).copy(alpha = 0.8f),
+                                selectedLabelColor = Color.Black
                             )
-                        },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = marker.toColor().copy(alpha = 0.8f),
-                            selectedLabelColor = Color.Black
                         )
-                    )
+                    }
                 }
-            }
 
-            Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(16.dp))
+            }
 
             // Action Buttons: Role, Name, Link
             Row(

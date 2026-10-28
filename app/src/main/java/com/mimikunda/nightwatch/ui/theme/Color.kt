@@ -3,6 +3,8 @@ package com.mimikunda.nightwatch.ui.theme
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CrisisAlert
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FlashOn
+import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.MicOff
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Star
@@ -12,6 +14,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.mimikunda.nightwatch.domain.model.RoleTeam
 import com.mimikunda.nightwatch.domain.model.StatusMarker
+import com.mimikunda.nightwatch.domain.settings.CustomStatusEffect
 
 val PitchBlack = Color(0xFF000000)
 val TableSurfaceCenter = Color(0xFF111318)
@@ -46,6 +49,19 @@ fun StatusMarker.toIcon(): ImageVector = when (this) {
     StatusMarker.SEER_INSPECTED -> Icons.Default.Visibility
     StatusMarker.MAYOR -> Icons.Default.Star
     StatusMarker.SILENCED -> Icons.Default.MicOff
+}
+
+fun CustomStatusEffect.toIcon(): ImageVector = when (this.iconKey) {
+    "CrisisAlert", "Target" -> Icons.Default.CrisisAlert
+    "Shield" -> Icons.Default.Shield
+    "Favorite", "Heart" -> Icons.Default.Favorite
+    "Warning" -> Icons.Default.Warning
+    "Visibility", "Eye" -> Icons.Default.Visibility
+    "Star" -> Icons.Default.Star
+    "MicOff" -> Icons.Default.MicOff
+    "Flash" -> Icons.Default.FlashOn
+    "Fire" -> Icons.Default.LocalFireDepartment
+    else -> Icons.Default.Star
 }
 
 fun RoleTeam?.toCardBackgroundColor(): Color = when (this) {

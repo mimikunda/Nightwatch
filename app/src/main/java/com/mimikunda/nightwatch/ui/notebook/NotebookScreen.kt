@@ -40,7 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mimikunda.nightwatch.R
-import com.mimikunda.nightwatch.domain.model.Role
+import com.mimikunda.nightwatch.domain.settings.GameSettingsRepository
 import com.mimikunda.nightwatch.ui.deal.DealFlowDialog
 import com.mimikunda.nightwatch.ui.notebook.components.ModeratorActionDock
 import com.mimikunda.nightwatch.ui.notebook.components.SeatNode
@@ -145,6 +145,7 @@ fun NotebookScreen(
         SelectedSeatBottomSheet(
             selectedSeat = selectedSeat,
             onToggleStatus = viewModel::onToggleStatus,
+            onToggleCustomStatus = viewModel::onToggleCustomStatus,
             onToggleAlive = viewModel::onToggleAliveSelected,
             onOpenRolePicker = viewModel::onOpenRolePicker,
             onOpenNamePicker = viewModel::onOpenNamePicker,
@@ -191,6 +192,9 @@ private fun RolePickerDialog(
     onSelectRole: (String?) -> Unit,
     onDismiss: () -> Unit
 ) {
+    val settings by GameSettingsRepository.settings.collectAsState()
+    val enabledRoles = settings.enabledRoles
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.dialog_select_role_title)) },
@@ -213,7 +217,7 @@ private fun RolePickerDialog(
                         )
                     }
                 }
-                items(Role.ALL_ROLES) { role ->
+                items(enabledRoles) { role ->
                     val isSelected = currentRoleId == role.roleId
                     Card(
                         modifier = Modifier

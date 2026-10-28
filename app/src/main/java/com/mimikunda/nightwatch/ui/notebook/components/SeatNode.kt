@@ -21,10 +21,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
@@ -34,6 +36,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -46,6 +49,7 @@ import androidx.compose.ui.unit.sp
 import com.mimikunda.nightwatch.R
 import com.mimikunda.nightwatch.domain.model.Role
 import com.mimikunda.nightwatch.domain.model.Seat
+import com.mimikunda.nightwatch.domain.settings.GameSettingsRepository
 import com.mimikunda.nightwatch.ui.theme.CardSurfaceVariantDark
 import com.mimikunda.nightwatch.ui.theme.TableSurfaceBorder
 import com.mimikunda.nightwatch.ui.theme.toColor
@@ -70,8 +74,12 @@ fun SeatNode(
     val haptic = LocalHapticFeedback.current
     val currentCenterState = rememberUpdatedState(currentCenterPx)
 
-    val roleObj = Role.ALL_ROLES.find { it.roleId == seat.roleId }
-    val roleTeam = roleObj?.team
+    val settings by GameSettingsRepository.settings.collectAsState()
+    val customRole = settings.roles.find { it.roleId == seat.roleId }
+    val staticRole = Role.ALL_ROLES.find { it.roleId == seat.roleId }
+
+    val roleDisplayName = customRole?.displayName ?: staticRole?.displayName
+    val roleTeam = customRole?.team ?: staticRole?.team
 
     val cornerRadius by animateDpAsState(
         targetValue = when {
@@ -104,6 +112,8 @@ fun SeatNode(
 
     val backgroundColor = if (isSelected) {
         CardSurfaceVariantDark
+    } else if (customRole != null) {
+        Color(customRole.colorArgb).copy(alpha = 0.25f)
     } else {
         seat.roleId.toRoleCardBackgroundColor(roleTeam)
     }
@@ -112,6 +122,8 @@ fun SeatNode(
         MaterialTheme.colorScheme.primary
     } else if (!seat.isAlive) {
         Color.Gray.copy(alpha = 0.5f)
+    } else if (customRole != null) {
+        Color(customRole.colorArgb).copy(alpha = 0.8f)
     } else {
         seat.roleId.toRoleBorderColor(roleTeam)
     }
@@ -205,9 +217,9 @@ fun SeatNode(
                 }
 
                 // Role label (if assigned)
-                if (roleObj != null) {
+                if (roleDisplayName != null) {
                     Text(
-                        text = roleObj.displayName,
+                        text = roleDisplayName,
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.primary.copy(alpha = 0.9f),
                         maxLines = 1,
@@ -228,7 +240,19 @@ fun SeatNode(
         }
 
         // Active Status Badges Overlay (Top-Right Corner)
-        if (seat.activeStatuses.isNotEmpty()) {
+        val allBadges = buildList<Pair<ImageVector, Color>> {
+            seat.activeStatuses.forEach { status ->
+                add(status.toIcon() to status.toColor())
+            }
+            seat.customStatusIds.forEach { effectId ->
+                val customEffect = settings.effects.find { it.id == effectId }
+                if (customEffect != null) {
+                    add(customEffect.toIcon() to Color(customEffect.colorArgb))
+                }
+            }
+        }
+
+        if (allBadges.isNotEmpty()) {
             Row(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
@@ -240,17 +264,17 @@ fun SeatNode(
                 horizontalArrangement = Arrangement.spacedBy(2.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                seat.activeStatuses.take(3).forEach { status ->
+                allBadges.take(3).forEach { (icon, color) ->
                     Icon(
-                        imageVector = status.toIcon(),
+                        imageVector = icon,
                         contentDescription = null,
-                        tint = status.toColor(),
+                        tint = color,
                         modifier = Modifier.size(11.dp)
                     )
                 }
-                if (seat.activeStatuses.size > 3) {
+                if (allBadges.size > 3) {
                     Text(
-                        text = "+${seat.activeStatuses.size - 3}",
+                        text = "+${allBadges.size - 3}",
                         fontSize = 8.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White

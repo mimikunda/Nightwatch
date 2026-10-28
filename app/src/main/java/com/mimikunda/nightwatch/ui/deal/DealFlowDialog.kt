@@ -21,6 +21,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -37,6 +39,7 @@ import com.mimikunda.nightwatch.domain.model.Role
 import com.mimikunda.nightwatch.domain.model.RoleDeckConfig
 import com.mimikunda.nightwatch.domain.model.Seat
 import com.mimikunda.nightwatch.domain.model.TableEdge
+import com.mimikunda.nightwatch.domain.settings.GameSettingsRepository
 import com.mimikunda.nightwatch.ui.deal.components.HoldToRevealCard
 import com.mimikunda.nightwatch.ui.deal.components.MiniTableMap
 
@@ -80,7 +83,10 @@ fun DealFlowDialog(
                     val currentSeat = seats.getOrNull(dealFlowState.currentSeatIndex)
                     if (currentSeat != null) {
                         val currentRoleId = dealFlowState.shuffledRoleIds.getOrNull(dealFlowState.currentSeatIndex)
+                        val settings by GameSettingsRepository.settings.collectAsState()
+                        val customRole = settings.roles.find { it.roleId == currentRoleId }
                         val role = Role.ALL_ROLES.find { it.roleId == currentRoleId }
+                            ?: customRole?.let { Role(it.roleId, it.displayName, it.team) }
 
                         PassToPlayerContent(
                             seat = currentSeat,
@@ -112,9 +118,18 @@ private fun ConfigureDeckContent(
     onQuickShuffle: (RoleDeckConfig) -> Unit,
     onDismiss: () -> Unit
 ) {
-    val counts = remember {
+    val settings by GameSettingsRepository.settings.collectAsState()
+    val enabledSpecialRoles = settings.enabledRoles.filter { it.roleId != "villager" }
+
+    val counts = remember(enabledSpecialRoles) {
         mutableStateMapOf<String, Int>().apply {
-            putAll(initialConfig.specialRoleCounts)
+            enabledSpecialRoles.forEach { role ->
+                val defaultVal = when (role.roleId) {
+                    "werewolf" -> 2
+                    else -> 1
+                }
+                put(role.roleId, initialConfig.specialRoleCounts[role.roleId] ?: defaultVal)
+            }
         }
     }
 
@@ -141,20 +156,10 @@ private fun ConfigureDeckContent(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        RoleStepperRow(stringResource(R.string.role_werewolves), counts["werewolf"] ?: 2) { newCount ->
-            counts["werewolf"] = newCount
-        }
-        RoleStepperRow(stringResource(R.string.role_seer), counts["seer"] ?: 1) { newCount ->
-            counts["seer"] = newCount
-        }
-        RoleStepperRow(stringResource(R.string.role_bodyguard), counts["bodyguard"] ?: 1) { newCount ->
-            counts["bodyguard"] = newCount
-        }
-        RoleStepperRow(stringResource(R.string.role_witch), counts["witch"] ?: 1) { newCount ->
-            counts["witch"] = newCount
-        }
-        RoleStepperRow(stringResource(R.string.role_mayor), counts["mayor"] ?: 0) { newCount ->
-            counts["mayor"] = newCount
+        enabledSpecialRoles.forEach { role ->
+            RoleStepperRow(role.displayName, counts[role.roleId] ?: 1) { newCount ->
+                counts[role.roleId] = newCount
+            }
         }
 
         Spacer(modifier = Modifier.height(20.dp))

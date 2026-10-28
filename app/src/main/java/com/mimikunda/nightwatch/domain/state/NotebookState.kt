@@ -172,6 +172,26 @@ data class NotebookState(
     }
 
     /**
+     * Toggles a custom status effect ID on a seat.
+     */
+    fun toggleCustomStatus(seatId: String, effectId: String): NotebookState {
+        return copy(
+            seats = seats.map { seat ->
+                if (seat.id == seatId) {
+                    val newCustoms = if (seat.customStatusIds.contains(effectId)) {
+                        seat.customStatusIds - effectId
+                    } else {
+                        seat.customStatusIds + effectId
+                    }
+                    seat.copy(customStatusIds = newCustoms)
+                } else {
+                    seat
+                }
+            }
+        )
+    }
+
+    /**
      * Strips transient night markers while preserving MAYOR, roles, and alive status.
      */
     fun clearNightMarkers(): NotebookState {
@@ -185,7 +205,10 @@ data class NotebookState(
         )
         return copy(
             seats = seats.map { seat ->
-                seat.copy(activeStatuses = seat.activeStatuses - nightMarkers)
+                seat.copy(
+                    activeStatuses = seat.activeStatuses - nightMarkers,
+                    customStatusIds = emptySet()
+                )
             }
         )
     }
