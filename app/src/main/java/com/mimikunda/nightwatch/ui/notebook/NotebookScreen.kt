@@ -62,6 +62,9 @@ fun NotebookScreen(
     }
 
     val uiState by viewModel.uiState.collectAsState()
+    val settings by GameSettingsRepository.settings.collectAsState()
+    val tableShape = settings.tableShape
+
     val seats = uiState.notebookState.seats
     val selectedSeat = seats.find { it.id == uiState.selectedSeatId }
 
@@ -85,14 +88,16 @@ fun NotebookScreen(
                 val marginPx = with(LocalDensity.current) { 56.dp.toPx() }
 
                 // Compute seat center Offsets
-                val seatCenters = remember(seats, uiState.edgeCounts, canvasWidthPx, canvasHeightPx) {
+                val seatCenters = remember(seats, uiState.edgeCounts, tableShape, canvasWidthPx, canvasHeightPx) {
                     seats.associate { seat ->
                         seat.id to SeatCoordinateSolver.resolveSeatCenter(
                             seat = seat,
+                            totalSeats = seats.size,
                             edgeCounts = uiState.edgeCounts,
                             canvasWidth = canvasWidthPx,
                             canvasHeight = canvasHeightPx,
-                            marginPx = marginPx
+                            marginPx = marginPx,
+                            tableShape = tableShape
                         )
                     }
                 }

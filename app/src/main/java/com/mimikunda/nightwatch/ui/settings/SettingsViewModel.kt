@@ -2,6 +2,7 @@ package com.mimikunda.nightwatch.ui.settings
 
 import androidx.lifecycle.ViewModel
 import com.mimikunda.nightwatch.domain.model.RoleTeam
+import com.mimikunda.nightwatch.domain.model.TableShape
 import com.mimikunda.nightwatch.domain.settings.CustomStatusEffect
 import com.mimikunda.nightwatch.domain.settings.GameSettings
 import com.mimikunda.nightwatch.domain.settings.GameSettingsRepository
@@ -17,6 +18,10 @@ class SettingsViewModel : ViewModel() {
 
     fun toggleEffect(effectId: String) {
         GameSettingsRepository.toggleEffect(effectId)
+    }
+
+    fun updateTableShape(shape: TableShape) {
+        GameSettingsRepository.updateTableShape(shape)
     }
 
     fun addCustomRole(

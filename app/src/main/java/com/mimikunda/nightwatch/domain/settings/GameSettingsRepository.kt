@@ -50,6 +50,14 @@ object GameSettingsRepository {
         }
     }
 
+    fun updateTableShape(shape: com.mimikunda.nightwatch.domain.model.TableShape) {
+        _settings.update { current ->
+            val updated = current.copy(tableShape = shape)
+            persist(updated)
+            updated
+        }
+    }
+
     fun addCustomRole(
         name: String,
         team: RoleTeam,

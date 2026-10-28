@@ -22,6 +22,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -39,9 +41,13 @@ import androidx.compose.ui.unit.sp
 import com.mimikunda.nightwatch.R
 import com.mimikunda.nightwatch.domain.model.Role
 import com.mimikunda.nightwatch.domain.model.Seat
+import com.mimikunda.nightwatch.domain.model.TableShape
+import com.mimikunda.nightwatch.domain.settings.GameSettingsRepository
 import com.mimikunda.nightwatch.ui.theme.StatusProtected
 import com.mimikunda.nightwatch.ui.theme.TableSurfaceBorder
 import com.mimikunda.nightwatch.ui.theme.TableSurfaceCenter
+import kotlin.math.cos
+import kotlin.math.sin
 
 @Composable
 fun TableSurfaceCanvas(
@@ -51,32 +57,71 @@ fun TableSurfaceCanvas(
     onToggleLayoutLock: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val settings by GameSettingsRepository.settings.collectAsState()
+    val tableShape = settings.tableShape
+
     Box(modifier = modifier.fillMaxSize()) {
         // Background Table Canvas & Link Paths
         Canvas(modifier = Modifier.fillMaxSize()) {
             val canvasW = size.width
             val canvasH = size.height
 
-            // 1. Draw central table boundary
+            // 1. Draw central table boundary matching tableShape
             val tableInsetX = canvasW * 0.18f
             val tableInsetY = canvasH * 0.18f
             val tableWidth = canvasW - (tableInsetX * 2f)
             val tableHeight = canvasH - (tableInsetY * 2f)
 
             if (tableWidth > 0 && tableHeight > 0) {
-                drawRoundRect(
-                    color = TableSurfaceCenter,
-                    topLeft = Offset(tableInsetX, tableInsetY),
-                    size = Size(tableWidth, tableHeight),
-                    cornerRadius = CornerRadius(32.dp.toPx(), 32.dp.toPx())
-                )
-                drawRoundRect(
-                    color = TableSurfaceBorder,
-                    topLeft = Offset(tableInsetX, tableInsetY),
-                    size = Size(tableWidth, tableHeight),
-                    cornerRadius = CornerRadius(32.dp.toPx(), 32.dp.toPx()),
-                    style = Stroke(width = 2.dp.toPx())
-                )
+                when (tableShape) {
+                    TableShape.RECTANGLE -> {
+                        drawRoundRect(
+                            color = TableSurfaceCenter,
+                            topLeft = Offset(tableInsetX, tableInsetY),
+                            size = Size(tableWidth, tableHeight),
+                            cornerRadius = CornerRadius(32.dp.toPx(), 32.dp.toPx())
+                        )
+                        drawRoundRect(
+                            color = TableSurfaceBorder,
+                            topLeft = Offset(tableInsetX, tableInsetY),
+                            size = Size(tableWidth, tableHeight),
+                            cornerRadius = CornerRadius(32.dp.toPx(), 32.dp.toPx()),
+                            style = Stroke(width = 2.dp.toPx())
+                        )
+                    }
+                    TableShape.CIRCLE, TableShape.OVAL -> {
+                        drawOval(
+                            color = TableSurfaceCenter,
+                            topLeft = Offset(tableInsetX, tableInsetY),
+                            size = Size(tableWidth, tableHeight)
+                        )
+                        drawOval(
+                            color = TableSurfaceBorder,
+                            topLeft = Offset(tableInsetX, tableInsetY),
+                            size = Size(tableWidth, tableHeight),
+                            style = Stroke(width = 2.dp.toPx())
+                        )
+                    }
+                    TableShape.HEXAGON, TableShape.OCTAGON -> {
+                        val sides = if (tableShape == TableShape.HEXAGON) 6 else 8
+                        val path = Path()
+                        val rx = tableWidth / 2f
+                        val ry = tableHeight / 2f
+                        val cx = canvasW / 2f
+                        val cy = canvasH / 2f
+
+                        for (i in 0 until sides) {
+                            val angle = (2.0 * Math.PI * i / sides) - (Math.PI / 2.0)
+                            val x = (cx + rx * cos(angle)).toFloat()
+                            val y = (cy + ry * sin(angle)).toFloat()
+                            if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
+                        }
+                        path.close()
+
+                        drawPath(path, color = TableSurfaceCenter)
+                        drawPath(path, color = TableSurfaceBorder, style = Stroke(width = 2.dp.toPx()))
+                    }
+                }
             }
 
             // 2. Draw dashed glowing link lines between linked seats (Lovers)

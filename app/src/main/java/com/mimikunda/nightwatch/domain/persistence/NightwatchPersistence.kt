@@ -57,7 +57,7 @@ object NightwatchPersistence {
             """{"id":"${effect.id}","name":"${effect.name}","colorArgb":${effect.colorArgb},"iconKey":"${effect.iconKey}","isEnabled":${effect.isEnabled},"isCustom":${effect.isCustom}}"""
         }
 
-        return """{"roles":[$rolesJson],"effects":[$effectsJson]}"""
+        return """{"roles":[$rolesJson],"effects":[$effectsJson],"tableShape":"${settings.tableShape.name}"}"""
     }
 
     fun jsonToSettings(rawJson: String): GameSettings {
@@ -116,9 +116,15 @@ object NightwatchPersistence {
                 )
             }
 
+            val shapeMatch = """"tableShape":"([^"]+)"""".toRegex().find(rawJson)
+            val tableShape = shapeMatch?.groupValues?.get(1)?.let {
+                try { com.mimikunda.nightwatch.domain.model.TableShape.valueOf(it) } catch (_: Exception) { null }
+            } ?: com.mimikunda.nightwatch.domain.model.TableShape.RECTANGLE
+
             GameSettings(
                 roles = if (rolesList.isNotEmpty()) rolesList else CustomRole.DEFAULT_ROLES,
-                effects = if (effectsList.isNotEmpty()) effectsList else CustomStatusEffect.DEFAULT_EFFECTS
+                effects = if (effectsList.isNotEmpty()) effectsList else CustomStatusEffect.DEFAULT_EFFECTS,
+                tableShape = tableShape
             )
         } catch (_: Exception) {
             GameSettings()
