@@ -140,7 +140,6 @@ fun NotebookScreen(
                 isLayoutEditUnlocked = uiState.isLayoutEditUnlocked,
                 edgeCounts = uiState.edgeCounts,
                 onCancelLinkMode = viewModel::onCancelLinkMode,
-                onClearNightMarkers = viewModel::onClearNightMarkers,
                 onOpenDealFlow = viewModel::onOpenDealFlow,
                 onUpdateEdgeCount = viewModel::onUpdateEdgeCount
             )

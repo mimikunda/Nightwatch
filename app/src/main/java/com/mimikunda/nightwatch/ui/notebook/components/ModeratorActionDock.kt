@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CleaningServices
 import androidx.compose.material.icons.filled.Style
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -44,11 +43,14 @@ fun ModeratorActionDock(
     isLayoutEditUnlocked: Boolean,
     edgeCounts: Map<TableEdge, Int>,
     onCancelLinkMode: () -> Unit,
-    onClearNightMarkers: () -> Unit,
     onOpenDealFlow: () -> Unit,
     onUpdateEdgeCount: (TableEdge, Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    if (!isLinkSelectionMode && !isLayoutEditUnlocked) {
+        return
+    }
+
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -78,59 +80,41 @@ fun ModeratorActionDock(
                 }
             }
         } else {
-            // Unselected Table Actions
+            // Layout Edit Mode Actions & Steppers
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = if (isLayoutEditUnlocked) Arrangement.SpaceBetween else Arrangement.End,
+                horizontalArrangement = Arrangement.Start,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                if (isLayoutEditUnlocked) {
-                    Button(
-                        onClick = onOpenDealFlow,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary
-                        )
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Style,
-                            contentDescription = null,
-                            modifier = Modifier.padding(end = 6.dp)
-                        )
-                        Text(stringResource(R.string.deal_roles_button), fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                    }
-                }
-
                 Button(
-                    onClick = onClearNightMarkers,
+                    onClick = onOpenDealFlow,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                        containerColor = MaterialTheme.colorScheme.primary
                     )
                 ) {
                     Icon(
-                        imageVector = Icons.Default.CleaningServices,
+                        imageVector = Icons.Default.Style,
                         contentDescription = null,
                         modifier = Modifier.padding(end = 6.dp)
                     )
-                    Text(stringResource(R.string.clear_markers_button), fontSize = 11.sp)
+                    Text(stringResource(R.string.deal_roles_button), fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
             }
 
-            // Edge Count Steppers: Show ONLY when Layout Edit is unlocked
-            if (isLayoutEditUnlocked) {
-                Spacer(modifier = Modifier.height(10.dp))
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    EdgeStepper(stringResource(R.string.edge_top), TableEdge.TOP, edgeCounts[TableEdge.TOP] ?: 0, onUpdateEdgeCount)
-                    EdgeStepper(stringResource(R.string.edge_right), TableEdge.RIGHT, edgeCounts[TableEdge.RIGHT] ?: 0, onUpdateEdgeCount)
-                    EdgeStepper(stringResource(R.string.edge_bottom), TableEdge.BOTTOM, edgeCounts[TableEdge.BOTTOM] ?: 0, onUpdateEdgeCount)
-                    EdgeStepper(stringResource(R.string.edge_left), TableEdge.LEFT, edgeCounts[TableEdge.LEFT] ?: 0, onUpdateEdgeCount)
-                    EdgeStepper(stringResource(R.string.edge_float), TableEdge.FLOATING, edgeCounts[TableEdge.FLOATING] ?: 0, onUpdateEdgeCount)
-                }
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Edge Count Steppers
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                EdgeStepper(stringResource(R.string.edge_top), TableEdge.TOP, edgeCounts[TableEdge.TOP] ?: 0, onUpdateEdgeCount)
+                EdgeStepper(stringResource(R.string.edge_right), TableEdge.RIGHT, edgeCounts[TableEdge.RIGHT] ?: 0, onUpdateEdgeCount)
+                EdgeStepper(stringResource(R.string.edge_bottom), TableEdge.BOTTOM, edgeCounts[TableEdge.BOTTOM] ?: 0, onUpdateEdgeCount)
+                EdgeStepper(stringResource(R.string.edge_left), TableEdge.LEFT, edgeCounts[TableEdge.LEFT] ?: 0, onUpdateEdgeCount)
+                EdgeStepper(stringResource(R.string.edge_float), TableEdge.FLOATING, edgeCounts[TableEdge.FLOATING] ?: 0, onUpdateEdgeCount)
             }
         }
     }

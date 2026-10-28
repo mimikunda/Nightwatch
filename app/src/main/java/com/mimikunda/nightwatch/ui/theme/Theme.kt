@@ -1,9 +1,12 @@
 package com.mimikunda.nightwatch.ui.theme
 
+import android.os.Build
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 
 private val PitchBlackColorScheme = darkColorScheme(
     primary = Color(0xFF90CAF9),
@@ -29,10 +32,25 @@ private val PitchBlackColorScheme = darkColorScheme(
 
 @Composable
 fun NightwatchTheme(
+    dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
+    val context = LocalContext.current
+    val baseColorScheme = when {
+        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+            dynamicDarkColorScheme(context)
+        }
+        else -> PitchBlackColorScheme
+    }
+
+    // Force Pitch Black background & surface for true AMOLED dark mode
+    val amoledColorScheme = baseColorScheme.copy(
+        background = PitchBlack,
+        surface = PitchBlack
+    )
+
     MaterialTheme(
-        colorScheme = PitchBlackColorScheme,
+        colorScheme = amoledColorScheme,
         typography = Typography,
         content = content
     )
