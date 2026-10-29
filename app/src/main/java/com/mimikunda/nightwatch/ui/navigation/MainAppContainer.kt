@@ -1,7 +1,13 @@
 package com.mimikunda.nightwatch.ui.navigation
 
+import android.content.res.Configuration
 import androidx.activity.BackEventCompat
 import androidx.activity.compose.PredictiveBackHandler
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
@@ -9,8 +15,10 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -25,6 +33,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -36,13 +45,16 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mimikunda.nightwatch.R
 import com.mimikunda.nightwatch.ui.notebook.NotebookScreen
+import com.mimikunda.nightwatch.ui.notebook.NotebookViewModel
 import com.mimikunda.nightwatch.ui.settings.SettingsScreen
 import com.mimikunda.nightwatch.ui.theme.PitchBlack
 import kotlinx.coroutines.CancellationException
@@ -50,7 +62,7 @@ import kotlinx.coroutines.flow.Flow
 
 enum class NavigationDestination(
     val titleRes: Int,
-    val icon: ImageVector
+    val icon: ImageVector,
 ) {
     Notebook(R.string.nav_notebook, Icons.Default.EditNote),
     Director(R.string.nav_director, Icons.Default.AutoMode),
@@ -58,9 +70,21 @@ enum class NavigationDestination(
 }
 
 @Composable
-fun MainAppContainer() {
+fun MainAppContainer(
+    notebookViewModel: NotebookViewModel = viewModel(),
+) {
+    val notebookUiState by notebookViewModel.uiState.collectAsState()
     var currentDestination by remember { mutableStateOf(NavigationDestination.Notebook) }
     var backProgress by remember { mutableFloatStateOf(0f) }
+
+    val configuration = LocalConfiguration.current
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
+    val windowInsets = if (isLandscape) {
+        WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal)
+    } else {
+        WindowInsets.safeDrawing
+    }
 
     // Live Predictive Back Handler for Main Navigation
     PredictiveBackHandler(enabled = currentDestination != NavigationDestination.Notebook) { progressFlow: Flow<BackEventCompat> ->
@@ -78,30 +102,37 @@ fun MainAppContainer() {
 
     Scaffold(
         containerColor = PitchBlack,
-        contentWindowInsets = WindowInsets.safeDrawing,
+        //contentWindowInsets = windowInsets
+        contentWindowInsets = WindowInsets(0.dp, 0.dp,0.dp, 0.dp),
         bottomBar = {
-            NavigationBar(
-                containerColor = PitchBlack,
-                contentColor = MaterialTheme.colorScheme.onSurface
+            AnimatedVisibility(
+                visible = notebookUiState.isLayoutEditUnlocked,
+                enter = slideInVertically { it } + fadeIn(),
+                exit = slideOutVertically { it } + fadeOut(),
             ) {
-                NavigationDestination.entries.forEach { destination ->
-                    NavigationBarItem(
-                        selected = currentDestination == destination,
-                        onClick = { currentDestination = destination },
-                        icon = {
-                            Icon(
-                                imageVector = destination.icon,
-                                contentDescription = stringResource(destination.titleRes)
-                            )
-                        },
-                        label = {
-                            Text(
-                                text = stringResource(destination.titleRes),
-                                fontSize = 11.sp,
-                                fontWeight = if (currentDestination == destination) FontWeight.Bold else FontWeight.Normal
-                            )
-                        }
-                    )
+                NavigationBar(
+                    containerColor = PitchBlack,
+                    contentColor = MaterialTheme.colorScheme.onSurface,
+                ) {
+                    NavigationDestination.entries.forEach { destination ->
+                        NavigationBarItem(
+                            selected = currentDestination == destination,
+                            onClick = { currentDestination = destination },
+                            icon = {
+                                Icon(
+                                    imageVector = destination.icon,
+                                    contentDescription = stringResource(destination.titleRes),
+                                )
+                            },
+                            label = {
+                                Text(
+                                    text = stringResource(destination.titleRes),
+                                    fontSize = 11.sp,
+                                    fontWeight = if (currentDestination == destination) FontWeight.Bold else FontWeight.Normal,
+                                )
+                            },
+                        )
+                    }
                 }
             }
         }
@@ -125,7 +156,7 @@ fun MainAppContainer() {
                         alpha = 1f
                     }
             ) {
-                NotebookScreen()
+                NotebookScreen(viewModel = notebookViewModel)
             }
 
             // Foreground Layer: Director or Settings Screen sliding off-screen to reveal NotebookScreen

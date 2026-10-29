@@ -73,18 +73,16 @@ fun NotebookScreen(
 
     Scaffold(
         containerColor = PitchBlack,
-        contentWindowInsets = WindowInsets.safeDrawing
+        contentWindowInsets = WindowInsets(0.dp, 0.dp,0.dp, 0.dp)
     ) { innerPadding ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            // Spatial Table Canvas Box
+            // Spatial Table Canvas Box (ALWAYS stationary, never pushed up!)
             BoxWithConstraints(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
+                modifier = Modifier.fillMaxSize()
             ) {
                 val canvasWidthPx = with(LocalDensity.current) { maxWidth.toPx() }
                 val canvasHeightPx = with(LocalDensity.current) { maxHeight.toPx() }
@@ -110,7 +108,10 @@ fun NotebookScreen(
                     seats = seats,
                     seatCenters = seatCenters,
                     isLayoutEditUnlocked = uiState.isLayoutEditUnlocked,
-                    onToggleLayoutLock = viewModel::onToggleLayoutLock
+                    edgeCounts = uiState.edgeCounts,
+                    onToggleLayoutLock = viewModel::onToggleLayoutLock,
+                    onOpenDealFlow = viewModel::onOpenDealFlow,
+                    onUpdateEdgeCount = viewModel::onUpdateEdgeCount
                 )
 
                 // Seat Overlay Nodes with Spring Position Animations
@@ -149,15 +150,14 @@ fun NotebookScreen(
                 }
             }
 
-            // Bottom Moderator Dock (Table Setup & Quick Actions)
+            // Floating Bottom Moderator Dock Overlay (Floats on top at bottom when linking seats)
             ModeratorActionDock(
                 selectedSeat = selectedSeat,
                 isLinkSelectionMode = uiState.isLinkSelectionMode,
-                isLayoutEditUnlocked = uiState.isLayoutEditUnlocked,
-                edgeCounts = uiState.edgeCounts,
                 onCancelLinkMode = viewModel::onCancelLinkMode,
-                onOpenDealFlow = viewModel::onOpenDealFlow,
-                onUpdateEdgeCount = viewModel::onUpdateEdgeCount
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 8.dp)
             )
         }
     }

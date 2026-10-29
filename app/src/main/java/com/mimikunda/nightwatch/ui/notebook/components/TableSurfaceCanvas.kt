@@ -1,5 +1,6 @@
 package com.mimikunda.nightwatch.ui.notebook.components
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -10,22 +11,29 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.BlurOn
 import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.CrisisAlert
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockOpen
+import androidx.compose.material.icons.filled.MicOff
 import androidx.compose.material.icons.filled.Pets
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Science
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Style
-import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -49,11 +57,14 @@ import com.mimikunda.nightwatch.R
 import com.mimikunda.nightwatch.domain.model.Role
 import com.mimikunda.nightwatch.domain.model.Seat
 import com.mimikunda.nightwatch.domain.model.StatusMarker
+import com.mimikunda.nightwatch.domain.model.TableEdge
 import com.mimikunda.nightwatch.domain.model.TableShape
 import com.mimikunda.nightwatch.domain.settings.GameSettingsRepository
+import com.mimikunda.nightwatch.ui.theme.StatusMayor
 import com.mimikunda.nightwatch.ui.theme.StatusPoisoned
 import com.mimikunda.nightwatch.ui.theme.StatusProtected
 import com.mimikunda.nightwatch.ui.theme.StatusSeerInspected
+import com.mimikunda.nightwatch.ui.theme.StatusSilenced
 import com.mimikunda.nightwatch.ui.theme.StatusWolfTarget
 import com.mimikunda.nightwatch.ui.theme.TableSurfaceBorder
 import com.mimikunda.nightwatch.ui.theme.TableSurfaceCenter
@@ -65,7 +76,10 @@ fun TableSurfaceCanvas(
     seats: List<Seat>,
     seatCenters: Map<String, Offset>,
     isLayoutEditUnlocked: Boolean,
+    edgeCounts: Map<TableEdge, Int>,
     onToggleLayoutLock: () -> Unit,
+    onOpenDealFlow: () -> Unit,
+    onUpdateEdgeCount: (TableEdge, Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val settings by GameSettingsRepository.settings.collectAsState()
@@ -184,6 +198,8 @@ fun TableSurfaceCanvas(
             val protectedCount = seats.count { StatusMarker.PROTECTED in it.activeStatuses || StatusMarker.SAVED_POTION in it.activeStatuses }
             val poisonedCount = seats.count { StatusMarker.POISONED in it.activeStatuses }
             val seerInspectedCount = seats.count { StatusMarker.SEER_INSPECTED in it.activeStatuses }
+            val mayorCount = seats.count { StatusMarker.MAYOR in it.activeStatuses }
+            val silencedCount = seats.count { StatusMarker.SILENCED in it.activeStatuses }
             val loversCount = seats.count { it.linkedSeatIds.isNotEmpty() }
 
             Column(
@@ -283,8 +299,8 @@ fun TableSurfaceCanvas(
                     }
                 }
 
-                // Row 2: Active Night Status Badges (if any active)
-                if (wolfTargetCount > 0 || protectedCount > 0 || poisonedCount > 0 || seerInspectedCount > 0 || loversCount > 0) {
+                // Row 2: Colour-Coded Active Night Status Badges
+                if (wolfTargetCount > 0 || protectedCount > 0 || poisonedCount > 0 || seerInspectedCount > 0 || mayorCount > 0 || silencedCount > 0 || loversCount > 0) {
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalAlignment = Alignment.CenterVertically
@@ -299,7 +315,13 @@ fun TableSurfaceCanvas(
                             StatusBadge(icon = Icons.Default.Science, count = poisonedCount, color = StatusPoisoned)
                         }
                         if (seerInspectedCount > 0) {
-                            StatusBadge(icon = Icons.Default.Visibility, count = seerInspectedCount, color = StatusSeerInspected)
+                            StatusBadge(icon = Icons.Default.Cancel, count = seerInspectedCount, color = StatusSeerInspected)
+                        }
+                        if (mayorCount > 0) {
+                            StatusBadge(icon = Icons.Default.Shield, count = mayorCount, color = StatusMayor)
+                        }
+                        if (silencedCount > 0) {
+                            StatusBadge(icon = Icons.Default.MicOff, count = silencedCount, color = StatusSilenced)
                         }
                         if (loversCount > 0) {
                             StatusBadge(icon = Icons.Default.Favorite, count = loversCount / 2, color = StatusProtected)
@@ -307,7 +329,36 @@ fun TableSurfaceCanvas(
                     }
                 }
 
-                // Row 3: M3 Layout Lock/Unlock Toggle Button
+                // Row 3: Deal Roles Button
+                Button(
+                    onClick = onOpenDealFlow,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary
+                    ),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.height(34.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Style,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp).padding(end = 4.dp)
+                    )
+                    Text(
+                        text = stringResource(R.string.deal_roles_button),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                // Row 4: Floating Seat Stepper Pill (when layout edit is unlocked)
+                AnimatedVisibility(visible = isLayoutEditUnlocked) {
+                    FloatingEdgeStepperPill(
+                        currentCount = edgeCounts[TableEdge.FLOATING] ?: 0,
+                        onUpdateEdgeCount = onUpdateEdgeCount
+                    )
+                }
+
+                // Row 5: M3 Layout Lock/Unlock Toggle Button
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(12.dp))
@@ -349,6 +400,73 @@ fun TableSurfaceCanvas(
 }
 
 @Composable
+private fun FloatingEdgeStepperPill(
+    currentCount: Int,
+    onUpdateEdgeCount: (TableEdge, Int) -> Unit
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center,
+        modifier = Modifier
+            .clip(RoundedCornerShape(14.dp))
+            .background(Color.White.copy(alpha = 0.08f))
+            .border(1.dp, TableSurfaceBorder, RoundedCornerShape(14.dp))
+            .padding(horizontal = 8.dp, vertical = 2.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(start = 4.dp, end = 6.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.BlurOn,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(14.dp)
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(
+                text = stringResource(R.string.edge_float),
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        }
+
+        IconButton(
+            onClick = { onUpdateEdgeCount(TableEdge.FLOATING, (currentCount - 1).coerceAtLeast(0)) },
+            modifier = Modifier.size(28.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Remove,
+                contentDescription = "Decrease Floating Seats",
+                tint = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.size(14.dp)
+            )
+        }
+
+        Text(
+            text = "$currentCount",
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(horizontal = 4.dp)
+        )
+
+        IconButton(
+            onClick = { onUpdateEdgeCount(TableEdge.FLOATING, currentCount + 1) },
+            modifier = Modifier.size(28.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Add,
+                contentDescription = "Increase Floating Seats",
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(14.dp)
+            )
+        }
+    }
+}
+
+@Composable
 private fun StatusBadge(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     count: Int,
@@ -359,9 +477,9 @@ private fun StatusBadge(
         horizontalArrangement = Arrangement.spacedBy(3.dp),
         modifier = Modifier
             .clip(RoundedCornerShape(8.dp))
-            .background(color.copy(alpha = 0.2f))
-            .border(1.dp, color.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
-            .padding(horizontal = 6.dp, vertical = 3.dp)
+            .background(color.copy(alpha = 0.25f))
+            .border(1.dp, color.copy(alpha = 0.7f), RoundedCornerShape(8.dp))
+            .padding(horizontal = 7.dp, vertical = 3.dp)
     ) {
         Icon(
             imageVector = icon,

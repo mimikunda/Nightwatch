@@ -8,13 +8,21 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Badge
+import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.CrisisAlert
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Link
+import androidx.compose.material.icons.filled.MicOff
 import androidx.compose.material.icons.filled.PersonOff
 import androidx.compose.material.icons.filled.Restore
+import androidx.compose.material.icons.filled.Science
+import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.WorkspacePremium
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -107,7 +115,7 @@ fun SelectedSeatBottomSheet(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Scrollable Status Marker FilterChips
+            // Scrollable Colour-Coded Status Marker FilterChips
             if (enabledEffects.isNotEmpty()) {
                 Text(
                     text = stringResource(R.string.status_flags_label),
@@ -122,27 +130,59 @@ fun SelectedSeatBottomSheet(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     enabledEffects.forEach { effect ->
+                        val effectColor = Color(effect.colorArgb)
                         val isActive = selectedSeat.activeStatuses.any { it.name == effect.id } ||
                                 selectedSeat.customStatusIds.contains(effect.id)
+
+                        val standardMarker = StatusMarker.entries.find { it.name == effect.id }
+                        val leadingIcon = when (standardMarker) {
+                            StatusMarker.WOLF_TARGET -> Icons.Default.CrisisAlert
+                            StatusMarker.PROTECTED -> Icons.Default.Shield
+                            StatusMarker.SAVED_POTION -> Icons.Default.Shield
+                            StatusMarker.POISONED -> Icons.Default.Science
+                            StatusMarker.SEER_INSPECTED -> Icons.Default.Visibility
+                            StatusMarker.MAYOR -> Icons.Default.WorkspacePremium
+                            StatusMarker.SILENCED -> Icons.Default.MicOff
+                            null -> Icons.Default.Bookmark
+                        }
+
                         FilterChip(
                             selected = isActive,
                             onClick = {
-                                val standardMarker = StatusMarker.entries.find { it.name == effect.id }
                                 if (standardMarker != null) {
                                     onToggleStatus(standardMarker)
                                 } else {
                                     onToggleCustomStatus(effect.id)
                                 }
                             },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = leadingIcon,
+                                    contentDescription = null,
+                                    tint = if (isActive) effectColor else effectColor.copy(alpha = 0.6f),
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            },
                             label = {
                                 Text(
                                     text = effect.name,
-                                    fontSize = 11.sp
+                                    fontSize = 11.sp,
+                                    fontWeight = if (isActive) FontWeight.Bold else FontWeight.Medium
                                 )
                             },
+                            border = FilterChipDefaults.filterChipBorder(
+                                enabled = true,
+                                selected = isActive,
+                                borderColor = effectColor.copy(alpha = 0.5f),
+                                selectedBorderColor = effectColor,
+                                borderWidth = 1.dp,
+                                selectedBorderWidth = 2.dp
+                            ),
                             colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = Color(effect.colorArgb).copy(alpha = 0.8f),
-                                selectedLabelColor = Color.Black
+                                containerColor = Color.DarkGray.copy(alpha = 0.2f),
+                                selectedContainerColor = effectColor.copy(alpha = 0.25f),
+                                labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                selectedLabelColor = effectColor
                             )
                         )
                     }
