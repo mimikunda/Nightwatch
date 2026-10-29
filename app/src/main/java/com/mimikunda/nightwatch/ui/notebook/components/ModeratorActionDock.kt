@@ -1,5 +1,10 @@
 package com.mimikunda.nightwatch.ui.notebook.components
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
@@ -47,74 +52,77 @@ fun ModeratorActionDock(
     onUpdateEdgeCount: (TableEdge, Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    if (!isLinkSelectionMode && !isLayoutEditUnlocked) {
-        return
-    }
-
-    Column(
+    AnimatedVisibility(
+        visible = isLinkSelectionMode || isLayoutEditUnlocked,
+        enter = slideInVertically { it } + fadeIn(),
+        exit = slideOutVertically { it } + fadeOut(),
         modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
-            .background(CardSurfaceDark)
-            .border(1.dp, TableSurfaceBorder, RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
-            .padding(16.dp)
     ) {
-        if (isLinkSelectionMode) {
-            // Link Selection Mode Banner
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = stringResource(
-                        R.string.link_prompt,
-                        selectedSeat?.name ?: stringResource(R.string.seat_default_name, (selectedSeat?.index ?: 0) + 1)
-                    ),
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                TextButton(onClick = onCancelLinkMode) {
-                    Text(stringResource(R.string.btn_cancel))
-                }
-            }
-        } else {
-            // Layout Edit Mode Actions & Steppers
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Start,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Button(
-                    onClick = onOpenDealFlow,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary
-                    )
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+                .background(CardSurfaceDark)
+                .border(1.dp, TableSurfaceBorder, RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+                .padding(16.dp)
+        ) {
+            if (isLinkSelectionMode) {
+                // Link Selection Mode Banner
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Style,
-                        contentDescription = null,
-                        modifier = Modifier.padding(end = 6.dp)
+                    Text(
+                        text = stringResource(
+                            R.string.link_prompt,
+                            selectedSeat?.name ?: stringResource(R.string.seat_default_name, (selectedSeat?.index ?: 0) + 1)
+                        ),
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
                     )
-                    Text(stringResource(R.string.deal_roles_button), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    TextButton(onClick = onCancelLinkMode) {
+                        Text(stringResource(R.string.btn_cancel))
+                    }
                 }
-            }
+            } else {
+                // Layout Edit Mode Actions & Steppers
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Start,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Button(
+                        onClick = onOpenDealFlow,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary
+                        )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Style,
+                            contentDescription = null,
+                            modifier = Modifier.padding(end = 6.dp)
+                        )
+                        Text(stringResource(R.string.deal_roles_button), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
 
-            Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
-            // Edge Count Steppers
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                EdgeStepper(stringResource(R.string.edge_top), TableEdge.TOP, edgeCounts[TableEdge.TOP] ?: 0, onUpdateEdgeCount)
-                EdgeStepper(stringResource(R.string.edge_right), TableEdge.RIGHT, edgeCounts[TableEdge.RIGHT] ?: 0, onUpdateEdgeCount)
-                EdgeStepper(stringResource(R.string.edge_bottom), TableEdge.BOTTOM, edgeCounts[TableEdge.BOTTOM] ?: 0, onUpdateEdgeCount)
-                EdgeStepper(stringResource(R.string.edge_left), TableEdge.LEFT, edgeCounts[TableEdge.LEFT] ?: 0, onUpdateEdgeCount)
-                EdgeStepper(stringResource(R.string.edge_float), TableEdge.FLOATING, edgeCounts[TableEdge.FLOATING] ?: 0, onUpdateEdgeCount)
+                // Edge Count Steppers
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    EdgeStepper(stringResource(R.string.edge_top), TableEdge.TOP, edgeCounts[TableEdge.TOP] ?: 0, onUpdateEdgeCount)
+                    EdgeStepper(stringResource(R.string.edge_right), TableEdge.RIGHT, edgeCounts[TableEdge.RIGHT] ?: 0, onUpdateEdgeCount)
+                    EdgeStepper(stringResource(R.string.edge_bottom), TableEdge.BOTTOM, edgeCounts[TableEdge.BOTTOM] ?: 0, onUpdateEdgeCount)
+                    EdgeStepper(stringResource(R.string.edge_left), TableEdge.LEFT, edgeCounts[TableEdge.LEFT] ?: 0, onUpdateEdgeCount)
+                    EdgeStepper(stringResource(R.string.edge_float), TableEdge.FLOATING, edgeCounts[TableEdge.FLOATING] ?: 0, onUpdateEdgeCount)
+                }
             }
         }
     }

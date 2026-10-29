@@ -1,5 +1,8 @@
 package com.mimikunda.nightwatch.ui.notebook
 
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateOffsetAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -110,15 +113,23 @@ fun NotebookScreen(
                     onToggleLayoutLock = viewModel::onToggleLayoutLock
                 )
 
-                // Seat Overlay Nodes
+                // Seat Overlay Nodes with Spring Position Animations
                 seats.forEach { seat ->
-                    val center = seatCenters[seat.id] ?: Offset.Zero
+                    val targetCenter = seatCenters[seat.id] ?: Offset.Zero
+                    val animatedCenter by animateOffsetAsState(
+                        targetValue = targetCenter,
+                        animationSpec = spring(
+                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                            stiffness = Spring.StiffnessMediumLow
+                        ),
+                        label = "seatCenterAnimation_${seat.id}"
+                    )
 
                     val nodeWidthPx = with(LocalDensity.current) { 90.dp.toPx() }
                     val nodeHeightPx = with(LocalDensity.current) { 55.dp.toPx() }
 
-                    val xOffsetPx = (center.x - nodeWidthPx / 2f).roundToInt()
-                    val yOffsetPx = (center.y - nodeHeightPx / 2f).roundToInt()
+                    val xOffsetPx = (animatedCenter.x - nodeWidthPx / 2f).roundToInt()
+                    val yOffsetPx = (animatedCenter.y - nodeHeightPx / 2f).roundToInt()
 
                     Box(
                         modifier = Modifier.offset { IntOffset(xOffsetPx, yOffsetPx) }
@@ -127,7 +138,7 @@ fun NotebookScreen(
                             seat = seat,
                             isSelected = seat.id == uiState.selectedSeatId,
                             isLayoutEditUnlocked = uiState.isLayoutEditUnlocked,
-                            currentCenterPx = center,
+                            currentCenterPx = animatedCenter,
                             onSelect = { viewModel.onSeatClick(seat.id) },
                             onQuickToggleAlive = { viewModel.onQuickToggleAlive(seat.id) },
                             onDrag = { normX, normY -> viewModel.onSeatDrag(seat.id, normX, normY) },

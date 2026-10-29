@@ -1,12 +1,13 @@
 package com.mimikunda.nightwatch.ui.settings
 
-import androidx.activity.compose.BackHandler
-import androidx.compose.animation.AnimatedContent
+import androidx.activity.BackEventCompat
+import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -44,6 +45,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -51,6 +53,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -62,6 +66,8 @@ import com.mimikunda.nightwatch.domain.settings.CustomStatusEffect
 import com.mimikunda.nightwatch.ui.notebook.NotebookViewModel
 import com.mimikunda.nightwatch.ui.settings.components.CustomRoleCreatorDialog
 import com.mimikunda.nightwatch.ui.settings.components.TableShapePicker
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.Flow
 
 enum class SettingsSubmenu {
     Main,
@@ -76,50 +82,97 @@ fun SettingsScreen(
 ) {
     val settings by viewModel.settings.collectAsState()
     var currentSubmenu by remember { mutableStateOf(SettingsSubmenu.Main) }
+    var backProgress by remember { mutableFloatStateOf(0f) }
 
     var isCreateRoleDialogOpen by remember { mutableStateOf(false) }
     var isResetGameDialogOpen by remember { mutableStateOf(false) }
     var isResetSettingsDialogOpen by remember { mutableStateOf(false) }
 
-    // Predictive Back / System Back Handler for Submenus
-    BackHandler(enabled = currentSubmenu != SettingsSubmenu.Main) {
-        currentSubmenu = SettingsSubmenu.Main
+    // Live Predictive Back Handler for Submenus
+    PredictiveBackHandler(enabled = currentSubmenu != SettingsSubmenu.Main) { progressFlow: Flow<BackEventCompat> ->
+        try {
+            progressFlow.collect { backEvent ->
+                backProgress = backEvent.progress
+            }
+            currentSubmenu = SettingsSubmenu.Main
+        } catch (_: CancellationException) {
+            // User cancelled back gesture
+        } finally {
+            backProgress = 0f
+        }
     }
 
-    AnimatedContent(
-        targetState = currentSubmenu,
-        label = "settingsSubmenuAnimation"
-    ) { submenu ->
-        when (submenu) {
-            SettingsSubmenu.Main -> {
-                MainSettingsHub(
-                    activeRolesCount = settings.enabledRoles.size,
-                    activeEffectsCount = settings.enabledEffects.size,
-                    currentShapeName = settings.tableShape.name.lowercase().replaceFirstChar { it.uppercase() },
-                    onNavigateToRoles = { currentSubmenu = SettingsSubmenu.RolesAndEffects },
-                    onNavigateToTable = { currentSubmenu = SettingsSubmenu.TableGeometry },
-                    onClearNightMarkers = notebookViewModel::onClearNightMarkers,
-                    onOpenResetGame = { isResetGameDialogOpen = true },
-                    onOpenResetSettings = { isResetSettingsDialogOpen = true }
-                )
-            }
-            SettingsSubmenu.RolesAndEffects -> {
-                RolesAndEffectsSubmenu(
-                    roles = settings.roles,
-                    effects = settings.effects,
-                    onBack = { currentSubmenu = SettingsSubmenu.Main },
-                    onToggleRole = viewModel::toggleRole,
-                    onToggleEffect = viewModel::toggleEffect,
-                    onDeleteCustomRole = viewModel::deleteCustomRole,
-                    onOpenCreateRole = { isCreateRoleDialogOpen = true }
-                )
-            }
-            SettingsSubmenu.TableGeometry -> {
-                TableGeometrySubmenu(
-                    selectedShape = settings.tableShape,
-                    onBack = { currentSubmenu = SettingsSubmenu.Main },
-                    onSelectShape = viewModel::updateTableShape
-                )
+    BoxWithConstraints(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+    ) {
+        val screenWidthPx = with(LocalDensity.current) { maxWidth.toPx() }
+
+        // Background Layer: Main Settings Hub (ALWAYS composed beneath submenus at full brightness)
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer {
+                    val bgScale = if (currentSubmenu == SettingsSubmenu.Main) 1f else 0.95f + (backProgress * 0.05f)
+                    scaleX = bgScale
+                    scaleY = bgScale
+                    alpha = 1f
+                }
+        ) {
+            MainSettingsHub(
+                activeRolesCount = settings.enabledRoles.size,
+                activeEffectsCount = settings.enabledEffects.size,
+                currentShapeName = settings.tableShape.name.lowercase().replaceFirstChar { it.uppercase() },
+                onNavigateToRoles = { currentSubmenu = SettingsSubmenu.RolesAndEffects },
+                onNavigateToTable = { currentSubmenu = SettingsSubmenu.TableGeometry },
+                onClearNightMarkers = notebookViewModel::onClearNightMarkers,
+                onOpenResetGame = { isResetGameDialogOpen = true },
+                onOpenResetSettings = { isResetSettingsDialogOpen = true }
+            )
+        }
+
+        // Foreground Layer: Submenu Card sliding off-screen to reveal MainSettingsHub
+        if (currentSubmenu != SettingsSubmenu.Main) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer {
+                        val translationX = backProgress * screenWidthPx
+                        val fgScale = 1f - (backProgress * 0.05f)
+                        scaleX = fgScale
+                        scaleY = fgScale
+                        this.translationX = translationX
+                    }
+                    .clip(RoundedCornerShape((20 * backProgress).dp))
+                    .border(
+                        width = if (backProgress > 0f) 1.dp else 0.dp,
+                        color = MaterialTheme.colorScheme.outline.copy(alpha = backProgress),
+                        shape = RoundedCornerShape((20 * backProgress).dp)
+                    )
+                    .background(MaterialTheme.colorScheme.background)
+            ) {
+                when (currentSubmenu) {
+                    SettingsSubmenu.RolesAndEffects -> {
+                        RolesAndEffectsSubmenu(
+                            roles = settings.roles,
+                            effects = settings.effects,
+                            onBack = { currentSubmenu = SettingsSubmenu.Main },
+                            onToggleRole = viewModel::toggleRole,
+                            onToggleEffect = viewModel::toggleEffect,
+                            onDeleteCustomRole = viewModel::deleteCustomRole,
+                            onOpenCreateRole = { isCreateRoleDialogOpen = true }
+                        )
+                    }
+                    SettingsSubmenu.TableGeometry -> {
+                        TableGeometrySubmenu(
+                            selectedShape = settings.tableShape,
+                            onBack = { currentSubmenu = SettingsSubmenu.Main },
+                            onSelectShape = viewModel::updateTableShape
+                        )
+                    }
+                    SettingsSubmenu.Main -> { }
+                }
             }
         }
     }
@@ -198,6 +251,7 @@ private fun MainSettingsHub(
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
@@ -386,6 +440,7 @@ private fun RolesAndEffectsSubmenu(
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
@@ -482,6 +537,7 @@ private fun TableGeometrySubmenu(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
             .padding(16.dp)
     ) {
         Row(
