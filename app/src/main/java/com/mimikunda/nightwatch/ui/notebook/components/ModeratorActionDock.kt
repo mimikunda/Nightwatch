@@ -15,14 +15,24 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.BlurOn
+import androidx.compose.material.icons.filled.East
+import androidx.compose.material.icons.filled.Group
+import androidx.compose.material.icons.filled.North
+import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material.icons.filled.South
 import androidx.compose.material.icons.filled.Style
+import androidx.compose.material.icons.filled.West
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -31,6 +41,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -52,6 +63,8 @@ fun ModeratorActionDock(
     onUpdateEdgeCount: (TableEdge, Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val totalSeats = edgeCounts.values.sum()
+
     AnimatedVisibility(
         visible = isLinkSelectionMode || isLayoutEditUnlocked,
         enter = slideInVertically { it } + fadeIn(),
@@ -61,10 +74,10 @@ fun ModeratorActionDock(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+                .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
                 .background(CardSurfaceDark)
-                .border(1.dp, TableSurfaceBorder, RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
-                .padding(16.dp)
+                .border(1.dp, TableSurfaceBorder, RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
+                .padding(horizontal = 14.dp, vertical = 10.dp)
         ) {
             if (isLinkSelectionMode) {
                 // Link Selection Mode Banner
@@ -87,10 +100,10 @@ fun ModeratorActionDock(
                     }
                 }
             } else {
-                // Layout Edit Mode Actions & Steppers
+                // Layout Edit Mode Header (Deal Roles + Total Seats Badge)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Start,
+                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Button(
@@ -106,22 +119,46 @@ fun ModeratorActionDock(
                         )
                         Text(stringResource(R.string.deal_roles_button), fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
+
+                    // Total Seats Badge
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color.Black.copy(alpha = 0.4f))
+                            .border(1.dp, TableSurfaceBorder, RoundedCornerShape(12.dp))
+                            .padding(horizontal = 10.dp, vertical = 6.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Group,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Text(
+                            text = "$totalSeats Seats Total",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
                 }
 
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
-                // Edge Count Steppers
+                // Ergonomic Horizontal Edge Stepper Pills
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    EdgeStepper(stringResource(R.string.edge_top), TableEdge.TOP, edgeCounts[TableEdge.TOP] ?: 0, onUpdateEdgeCount)
-                    EdgeStepper(stringResource(R.string.edge_right), TableEdge.RIGHT, edgeCounts[TableEdge.RIGHT] ?: 0, onUpdateEdgeCount)
-                    EdgeStepper(stringResource(R.string.edge_bottom), TableEdge.BOTTOM, edgeCounts[TableEdge.BOTTOM] ?: 0, onUpdateEdgeCount)
-                    EdgeStepper(stringResource(R.string.edge_left), TableEdge.LEFT, edgeCounts[TableEdge.LEFT] ?: 0, onUpdateEdgeCount)
-                    EdgeStepper(stringResource(R.string.edge_float), TableEdge.FLOATING, edgeCounts[TableEdge.FLOATING] ?: 0, onUpdateEdgeCount)
+                    EdgeStepperPill(stringResource(R.string.edge_top), TableEdge.TOP, Icons.Default.North, edgeCounts[TableEdge.TOP] ?: 0, onUpdateEdgeCount)
+                    EdgeStepperPill(stringResource(R.string.edge_right), TableEdge.RIGHT, Icons.Default.East, edgeCounts[TableEdge.RIGHT] ?: 0, onUpdateEdgeCount)
+                    EdgeStepperPill(stringResource(R.string.edge_bottom), TableEdge.BOTTOM, Icons.Default.South, edgeCounts[TableEdge.BOTTOM] ?: 0, onUpdateEdgeCount)
+                    EdgeStepperPill(stringResource(R.string.edge_left), TableEdge.LEFT, Icons.Default.West, edgeCounts[TableEdge.LEFT] ?: 0, onUpdateEdgeCount)
+                    EdgeStepperPill(stringResource(R.string.edge_float), TableEdge.FLOATING, Icons.Default.BlurOn, edgeCounts[TableEdge.FLOATING] ?: 0, onUpdateEdgeCount)
                 }
             }
         }
@@ -129,39 +166,71 @@ fun ModeratorActionDock(
 }
 
 @Composable
-private fun EdgeStepper(
+private fun EdgeStepperPill(
     label: String,
     edge: TableEdge,
+    icon: ImageVector,
     currentCount: Int,
     onUpdateEdgeCount: (TableEdge, Int) -> Unit
 ) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center,
         modifier = Modifier
-            .clip(RoundedCornerShape(12.dp))
-            .background(Color.Black.copy(alpha = 0.4f))
-            .padding(horizontal = 8.dp, vertical = 6.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(Color.Black.copy(alpha = 0.5f))
+            .border(1.dp, TableSurfaceBorder, RoundedCornerShape(16.dp))
+            .padding(horizontal = 8.dp, vertical = 4.dp)
     ) {
-        Text(text = label, fontSize = 10.sp, color = Color.Gray)
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            TextButton(
-                onClick = { onUpdateEdgeCount(edge, (currentCount - 1).coerceAtLeast(0)) },
-                modifier = Modifier.width(28.dp)
-            ) {
-                Text("-", fontSize = 14.sp, fontWeight = FontWeight.Bold)
-            }
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(start = 4.dp, end = 6.dp)
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(14.dp)
+            )
+            Spacer(modifier = Modifier.width(4.dp))
             Text(
-                text = "$currentCount",
-                fontSize = 12.sp,
+                text = label,
+                fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
             )
-            TextButton(
-                onClick = { onUpdateEdgeCount(edge, currentCount + 1) },
-                modifier = Modifier.width(28.dp)
-            ) {
-                Text("+", fontSize = 14.sp, fontWeight = FontWeight.Bold)
-            }
+        }
+
+        IconButton(
+            onClick = { onUpdateEdgeCount(edge, (currentCount - 1).coerceAtLeast(0)) },
+            modifier = Modifier.size(32.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Remove,
+                contentDescription = "Decrease",
+                tint = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.size(16.dp)
+            )
+        }
+
+        Text(
+            text = "$currentCount",
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(horizontal = 4.dp)
+        )
+
+        IconButton(
+            onClick = { onUpdateEdgeCount(edge, currentCount + 1) },
+            modifier = Modifier.size(32.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Add,
+                contentDescription = "Increase",
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(16.dp)
+            )
         }
     }
 }

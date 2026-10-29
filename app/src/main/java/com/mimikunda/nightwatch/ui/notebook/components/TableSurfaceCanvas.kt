@@ -10,14 +10,21 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Cancel
+import androidx.compose.material.icons.filled.CrisisAlert
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockOpen
+import androidx.compose.material.icons.filled.Pets
+import androidx.compose.material.icons.filled.Science
+import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material.icons.filled.Style
+import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -41,9 +48,13 @@ import androidx.compose.ui.unit.sp
 import com.mimikunda.nightwatch.R
 import com.mimikunda.nightwatch.domain.model.Role
 import com.mimikunda.nightwatch.domain.model.Seat
+import com.mimikunda.nightwatch.domain.model.StatusMarker
 import com.mimikunda.nightwatch.domain.model.TableShape
 import com.mimikunda.nightwatch.domain.settings.GameSettingsRepository
+import com.mimikunda.nightwatch.ui.theme.StatusPoisoned
 import com.mimikunda.nightwatch.ui.theme.StatusProtected
+import com.mimikunda.nightwatch.ui.theme.StatusSeerInspected
+import com.mimikunda.nightwatch.ui.theme.StatusWolfTarget
 import com.mimikunda.nightwatch.ui.theme.TableSurfaceBorder
 import com.mimikunda.nightwatch.ui.theme.TableSurfaceCenter
 import kotlin.math.cos
@@ -165,78 +176,204 @@ fun TableSurfaceCanvas(
         ) {
             val aliveCount = seats.count { it.isAlive }
             val totalCount = seats.size
+            val deadCount = totalCount - aliveCount
             val werewolfCount = seats.count { it.isAlive && it.roleId == Role.WEREWOLF.roleId }
+            val unassignedCount = seats.count { it.roleId == null }
+
+            val wolfTargetCount = seats.count { StatusMarker.WOLF_TARGET in it.activeStatuses }
+            val protectedCount = seats.count { StatusMarker.PROTECTED in it.activeStatuses || StatusMarker.SAVED_POTION in it.activeStatuses }
+            val poisonedCount = seats.count { StatusMarker.POISONED in it.activeStatuses }
+            val seerInspectedCount = seats.count { StatusMarker.SEER_INSPECTED in it.activeStatuses }
+            val loversCount = seats.count { it.linkedSeatIds.isNotEmpty() }
 
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
+                verticalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(Color.Black.copy(alpha = 0.7f))
-                    .border(1.dp, TableSurfaceBorder, RoundedCornerShape(16.dp))
-                    .padding(horizontal = 16.dp, vertical = 10.dp)
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(Color.Black.copy(alpha = 0.8f))
+                    .border(1.dp, TableSurfaceBorder, RoundedCornerShape(20.dp))
+                    .padding(horizontal = 14.dp, vertical = 12.dp)
             ) {
-                Text(
-                    text = stringResource(R.string.app_name).uppercase(),
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                    letterSpacing = 2.sp
-                )
-
-                Spacer(modifier = Modifier.height(4.dp))
-
+                // Row 1: Player Metrics with Icons
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(14.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = stringResource(R.string.hud_alive, aliveCount, totalCount),
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-
-                    if (werewolfCount > 0) {
-                        Text(
-                            text = stringResource(R.string.hud_werewolves, werewolfCount),
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.error
+                    // Alive
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Favorite,
+                            contentDescription = "Alive Players",
+                            tint = Color(0xFF4CAF50),
+                            modifier = Modifier.size(16.dp)
                         )
+                        Text(
+                            text = "$aliveCount/$totalCount",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+
+                    // Dead
+                    if (deadCount > 0) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Cancel,
+                                contentDescription = "Dead Players",
+                                tint = Color(0xFF9E9E9E),
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Text(
+                                text = "$deadCount",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.Gray
+                            )
+                        }
+                    }
+
+                    // Werewolves
+                    if (werewolfCount > 0) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Pets,
+                                contentDescription = "Active Werewolves",
+                                tint = Color(0xFFFF5252),
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Text(
+                                text = "$werewolfCount",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFFFF5252)
+                            )
+                        }
+                    }
+
+                    // Unassigned Roles
+                    if (unassignedCount > 0) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Style,
+                                contentDescription = "Unassigned Roles",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Text(
+                                text = "$unassignedCount",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(6.dp))
+                // Row 2: Active Night Status Badges (if any active)
+                if (wolfTargetCount > 0 || protectedCount > 0 || poisonedCount > 0 || seerInspectedCount > 0 || loversCount > 0) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        if (wolfTargetCount > 0) {
+                            StatusBadge(icon = Icons.Default.CrisisAlert, count = wolfTargetCount, color = StatusWolfTarget)
+                        }
+                        if (protectedCount > 0) {
+                            StatusBadge(icon = Icons.Default.Shield, count = protectedCount, color = StatusProtected)
+                        }
+                        if (poisonedCount > 0) {
+                            StatusBadge(icon = Icons.Default.Science, count = poisonedCount, color = StatusPoisoned)
+                        }
+                        if (seerInspectedCount > 0) {
+                            StatusBadge(icon = Icons.Default.Visibility, count = seerInspectedCount, color = StatusSeerInspected)
+                        }
+                        if (loversCount > 0) {
+                            StatusBadge(icon = Icons.Default.Favorite, count = loversCount / 2, color = StatusProtected)
+                        }
+                    }
+                }
 
-                // Layout Lock / Unlock Toggle Button
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center,
+                // Row 3: M3 Layout Lock/Unlock Toggle Button
+                Box(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
+                        .clip(RoundedCornerShape(12.dp))
                         .background(
                             if (isLayoutEditUnlocked) MaterialTheme.colorScheme.primaryContainer
-                            else Color.Transparent
+                            else Color.White.copy(alpha = 0.08f)
+                        )
+                        .border(
+                            width = 1.dp,
+                            color = if (isLayoutEditUnlocked) MaterialTheme.colorScheme.primary else TableSurfaceBorder,
+                            shape = RoundedCornerShape(12.dp)
                         )
                         .clickable { onToggleLayoutLock() }
-                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                        .padding(horizontal = 12.dp, vertical = 6.dp)
                 ) {
-                    Icon(
-                        imageVector = if (isLayoutEditUnlocked) Icons.Default.LockOpen else Icons.Default.Lock,
-                        contentDescription = null,
-                        tint = if (isLayoutEditUnlocked) MaterialTheme.colorScheme.onPrimaryContainer else Color.Gray,
-                        modifier = Modifier.size(14.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = if (isLayoutEditUnlocked) stringResource(R.string.layout_edit_on)
-                        else stringResource(R.string.layout_edit_locked),
-                        fontSize = 10.sp,
-                        color = if (isLayoutEditUnlocked) MaterialTheme.colorScheme.onPrimaryContainer else Color.Gray
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = if (isLayoutEditUnlocked) Icons.Default.LockOpen else Icons.Default.Lock,
+                            contentDescription = null,
+                            tint = if (isLayoutEditUnlocked) MaterialTheme.colorScheme.onPrimaryContainer else Color.Gray,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = if (isLayoutEditUnlocked) stringResource(R.string.layout_edit_on)
+                            else stringResource(R.string.layout_edit_locked),
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (isLayoutEditUnlocked) MaterialTheme.colorScheme.onPrimaryContainer else Color.Gray
+                        )
+                    }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun StatusBadge(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    count: Int,
+    color: Color
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(3.dp),
+        modifier = Modifier
+            .clip(RoundedCornerShape(8.dp))
+            .background(color.copy(alpha = 0.2f))
+            .border(1.dp, color.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
+            .padding(horizontal = 6.dp, vertical = 3.dp)
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = color,
+            modifier = Modifier.size(12.dp)
+        )
+        Text(
+            text = "$count",
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Bold,
+            color = color
+        )
     }
 }
